@@ -1,0 +1,22 @@
+[
+    {
+      "ParameterKey": "EnvironmentName",
+      "ParameterValue": "Testing"
+    },
+    {
+      "ParameterKey": "TagName",
+      "ParameterValue": "jenkins"
+    },
+    {
+      "ParameterKey": "Owner",
+      "ParameterValue": "Ankit Jain"
+    },
+    {
+      "ParameterKey": "VpcCIDR",
+      "ParameterValue": "10.20.0.0/16"
+    },
+    {
+      "ParameterKey": "PublicSubnetCIDR",
+      "ParameterValue": "10.20.10.0/24"
+    }
+  ]

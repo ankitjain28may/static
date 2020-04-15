@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "Testing"
+  },
+  {
+    "ParameterKey": "TagName",
+    "ParameterValue": "jenkins"
+  },
+  {
+    "ParameterKey": "Owner",
+    "ParameterValue": "Ankit Jain"
+  },
+  {
+    "ParameterKey": "ImageID",
+    "ParameterValue": "ami-0620d12a9cf777c87"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t2.micro"
+  },
+  {
+    "ParameterKey": "KeyPairName",
+    "ParameterValue": "ankit"
+  },
+  {
+    "ParameterKey": "GroupName",
+    "ParameterValue": "jenkins"
+  },
+  {
+    "ParameterKey": "UserName",
+    "ParameterValue": "jenkins"
+  },
+  {
+    "ParameterKey": "MyIP",
+    "ParameterValue": "" 
+  },
+  {
+    "ParameterKey": "BucketName",
+    "ParameterValue": "static-site-jenkins-2k20"
+  }
+]

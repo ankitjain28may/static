@@ -1,0 +1,172 @@
+  
+ 
+Description:  This template creates a sample website using Application Load Balancer attached
+  to an Auto Scaling group and bastion host'
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+  
+  TagName:
+    Description: Name of the application
+    Type: String
+
+  Owner:
+    Description: Name of the Owner
+    Type: String
+  
+  KeyPairName:
+    Description: Name of the existing key pair
+    Type: String
+
+  InternetCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+  
+  MyIP:
+    Type: String
+    Default: 0.0.0.0/0
+
+  ImageID:
+    Description: Please enter the AMI ID
+    Type: String
+    Default: ami-0620d12a9cf777c87
+  
+  GroupName:
+    Description: Please enter the name of the group
+    Type: String
+  
+  BucketName:
+    Description: Please enter the name of the bucket and it should be unique
+    Type: String
+
+  UserName:
+    Description: Please enter the name of the user
+    Type: String
+
+  InstanceType:
+    Description: Please enter the instance type
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, 
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, m1.small,
+      m1.medium, m1.large, m1.xlarge, m2.xlarge, m2.2xlarge, m2.4xlarge, m3.medium,
+      m3.large, m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge,
+      m4.10xlarge, c1.medium, c1.xlarge, c3.large, c3.xlarge, c3.2xlarge, c3.4xlarge,
+      c3.8xlarge, c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, g2.2xlarge,
+      g2.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge, r3.8xlarge, i2.xlarge,
+      i2.2xlarge, i2.4xlarge, i2.8xlarge, d2.xlarge, d2.2xlarge, d2.4xlarge, d2.8xlarge,
+      hi1.4xlarge, hs1.8xlarge, cr1.8xlarge, cc2.8xlarge, cg1.4xlarge]
+
+Resources:
+  Group:
+    Type: AWS::IAM::Group
+    Properties: 
+      GroupName: !Ref GroupName
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonVPCFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+
+  User:
+    Type: AWS::IAM::User
+    Properties: 
+      Groups:
+        - !Ref Group 
+      Tags:
+        - Key: Name
+          Value: !Ref TagName
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref EnvironmentName
+      UserName: !Ref UserName
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: 
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPC-ID"
+      GroupDescription: basic Jenkins security group
+      GroupName: !Ref GroupName
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref MyIP
+        - IpProtocol: tcp
+          FromPort: '8080'
+          ToPort: '8080'
+          CidrIp: !Ref InternetCIDR
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: !Ref InternetCIDR
+      Tags:
+        - Key: Name
+          Value: !Ref TagName
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageID
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds: 
+        - Ref: InstanceSecurityGroup
+      SubnetId: 
+        Fn::ImportValue: !Sub "${EnvironmentName}-Pub-Subnet-1"
+      KeyName: !Ref KeyPairName
+      UserData:
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash
+            apt-get update -y
+            apt-get install unzip python3-pip apache2 awscli -y
+
+            pip3 install --upgrade awscli
+
+      Tags:
+        - Key: Name
+          Value: !Ref TagName
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  
+  StaticSiteBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: False
+        BlockPublicPolicy: False
+        IgnorePublicAcls: False
+        RestrictPublicBuckets: False
+      Tags:
+        - Key: Name
+          Value: !Ref TagName
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref EnvironmentName
+      WebsiteConfiguration: 
+        ErrorDocument: index.html
+        IndexDocument: index.html
+      
+
+Outputs:
+  JenkinsHostIP:
+    Description: Jenkins instance Public IP
+    Value:
+      Fn::GetAtt: JenkinsInstance.PublicIp
+  JenkinsPublicDNS:
+    Description: Jenkins instance Public DNS
+    Value:
+      Fn::GetAtt: JenkinsInstance.PublicDnsName
+  StaticBucketWebsiteURL:
+    Value:
+      Fn::GetAtt: StaticSiteBucket.WebsiteURL
